@@ -3,6 +3,9 @@ const app = express()
 const cors = require('cors')
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const url = require('url');
+const querystring = require('url');
+
 
 
 //mongo connection
@@ -146,27 +149,34 @@ app.get('/api/exercise/users',(req,res)=>{
 });
 
 app.get('/api/exercise/log',(req,res)=>{
-  
-  if(req.query.userId){
-      let query={_id:req.query.userId}
+  let data=req.query.userId.split('?')
+ let parsedQs = {'userId':data[0]}
+  for(let i=1;i<data.length;i++){
+    let d= data[i].split('=')
+    parsedQs[d[0]]=d[1]
+  }
+console.log(parsedQs)
+
+  if(parsedQs.userId){
+      let query={_id:parsedQs.userId}
       let limit=100;
-      if(req.query.from){
-        query['date']={'$gte':req.query.from}
+      if(parsedQs.from){
+        query['date']={'$gte':parsedQs.from}
       }
-      if(req.query.to){
-        query['date']['$lte']=req.query.to
+      if(parsedQs.to){
+        query['date']['$lte']=parsedQs.to
       }
       console.log(query)
-      if(req.query.limit){
-        limit=req.query.limit
+      if(parsedQs.limit){
+        limit=parsedQs.limit
       }
 
       ExerciseTracker.findOne(
         query,
-        {_id:1,username:1,log:1},
+        {},
       (err,logs)=>{
         if(err){
-          res.send(err)
+          res.send('error')
         }
         else{
         if(logs){
@@ -174,13 +184,13 @@ app.get('/api/exercise/log',(req,res)=>{
         res.json({
           _id:logs._id,
           username:logs.username,
-          log:logs.log.slice(limit),
+          log:logs.log,
           count:logs.log.length
         });}
         
         else{
           res.json({
-            _id:req.query.userId,
+            _id:parsedQs.userId,
             log:[],
           count:0
           })
