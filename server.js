@@ -10,7 +10,7 @@ const querystring = require('url');
 
 //mongo connection
 mongoose.Promise = global.Promise;
-const mongoURI="";
+const mongoURI="mongodb+srv://user:OOHFOy7NfUY0YcqE@cluster0.9avjz.mongodb.net/microservices?retryWrites=true&w=majority";
 mongoose.connect(mongoURI, 
 { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.set('useFindAndModify', false);
@@ -80,7 +80,9 @@ app.post('/api/exercise/new-user',parser,(req,res)=>{
   })
 });
 
+
 app.post('/api/exercise/add',parser,(req,res)=>{
+  console.log('adding');
   console.log(req.body);
   let date1 = req.body.date?req.body.date:new Date();
   let newLog = {
@@ -95,11 +97,12 @@ app.post('/api/exercise/add',parser,(req,res)=>{
     res.send('invalid userid');
   }
   else{
-  var found;
+
   ExerciseTracker.findOne({
     _id:mongoose.Types.ObjectId(req.body.userId)
   },(err,resp)=>{
     if(err){
+      console.log('jaksdnjabsdkad')
       res.send('invalid userid/userid not found');
     }
     else{
@@ -113,13 +116,17 @@ app.post('/api/exercise/add',parser,(req,res)=>{
             res.send("invalid exercise/log, please provide data in required format");
           }
           else{
-            res.json({
+            console.log('here')
+            let response = {
               _id:resp1._id,
               username:resp1.username,
-              description:req.body.description,
-              duration:req.body.duration,
-              date:req.body.date?req.body.date:new Date().toDateString()
-            });
+              date:req.body.date?new Date(req.body.date).toDateString():new Date().toDateString(),
+              duration:parseInt(req.body.duration),
+              description:req.body.description
+              
+            }
+            console.log(response);
+            res.json(response);
           }
         }
         ) 
@@ -136,10 +143,26 @@ app.post('/api/exercise/add',parser,(req,res)=>{
 });
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 app.get('/api/exercise/users',(req,res)=>{
   ExerciseTracker.find({},{_id:1,username:1},(err,users)=>{
     if(err){
-      console.log(err);
+      //console.log(err);
     }
     else{
       //console.log(users);
@@ -155,7 +178,7 @@ app.get('/api/exercise/log',(req,res)=>{
     let d= data[i].split('=')
     parsedQs[d[0]]=d[1]
   }
-console.log(parsedQs)
+//console.log(parsedQs)
 
   if(parsedQs.userId){
       let query={_id:parsedQs.userId}
@@ -166,7 +189,7 @@ console.log(parsedQs)
       if(parsedQs.to){
         query['date']['$lte']=parsedQs.to
       }
-      console.log(query)
+      //console.log(query)
       if(parsedQs.limit){
         limit=parsedQs.limit
       }
@@ -180,7 +203,7 @@ console.log(parsedQs)
         }
         else{
         if(logs){
-        console.log(logs)
+        //console.log(logs)
         res.json({
           _id:logs._id,
           username:logs.username,
