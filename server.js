@@ -10,7 +10,7 @@ const querystring = require('url');
 
 //mongo connection
 mongoose.Promise = global.Promise;
-const mongoURI="mongodb+srv://user:OOHFOy7NfUY0YcqE@cluster0.9avjz.mongodb.net/microservices?retryWrites=true&w=majority";
+const mongoURI="<add your mongo URI here>";
 mongoose.connect(mongoURI, 
 { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.set('useFindAndModify', false);
@@ -82,8 +82,8 @@ app.post('/api/exercise/new-user',parser,(req,res)=>{
 
 
 app.post('/api/exercise/add',parser,(req,res)=>{
-  console.log('adding');
-  console.log(req.body);
+  //console.log('adding');
+  //console.log(req.body);
   let date1 = req.body.date?req.body.date:new Date();
   let newLog = {
     description:req.body.description,
@@ -102,7 +102,7 @@ app.post('/api/exercise/add',parser,(req,res)=>{
     _id:mongoose.Types.ObjectId(req.body.userId)
   },(err,resp)=>{
     if(err){
-      console.log('jaksdnjabsdkad')
+      //console.log('jaksdnjabsdkad')
       res.send('invalid userid/userid not found');
     }
     else{
@@ -116,7 +116,7 @@ app.post('/api/exercise/add',parser,(req,res)=>{
             res.send("invalid exercise/log, please provide data in required format");
           }
           else{
-            console.log('here')
+            //console.log('here')
             let response = {
               _id:resp1._id,
               username:resp1.username,
@@ -125,7 +125,7 @@ app.post('/api/exercise/add',parser,(req,res)=>{
               description:req.body.description
               
             }
-            console.log(response);
+            //console.log(response);
             res.json(response);
           }
         }
@@ -173,47 +173,64 @@ app.get('/api/exercise/users',(req,res)=>{
 
 app.get('/api/exercise/log',(req,res)=>{
   let data=req.query.userId.split('?')
- let parsedQs = {'userId':data[0]}
-  for(let i=1;i<data.length;i++){
-    let d= data[i].split('=')
-    parsedQs[d[0]]=d[1]
-  }
-//console.log(parsedQs)
+  var limit=100;
+ // console.log(req.query);
+ 
+ 
+  let query=[];
+  if(req.query.userId){
+    query.push({'$match':{_id:mongoose.Types.ObjectId(req.query.userId)}})
+    query.push({'$unwind': {'path': '$log'}})
+      if(req.query.from){
+        
+        query.push({
+      '$match': {
+      'log.date': {
+        '$gte': new Date(req.query.from), 
+        '$lte': new Date(req.query.to)
+            }
+          }
+        })
+        }
+    query.push({ '$group': {
+        '_id': '$_id', 
+        'log': {'$push': '$log'}}
+        })
+    query.push({
+      '$project': {
+        '_id': 1, 
+        'log': 1, 
+        'cnt': {
+          '$size': '$log'
+        }
+      }
+    })
+      }
+    
+      
+      if(req.query.limit){
+        limit=req.query.limit;
+      }
 
-  if(parsedQs.userId){
-      let query={_id:parsedQs.userId}
-      let limit=100;
-      if(parsedQs.from){
-        query['date']={'$gte':parsedQs.from}
-      }
-      if(parsedQs.to){
-        query['date']['$lte']=parsedQs.to
-      }
       //console.log(query)
-      if(parsedQs.limit){
-        limit=parsedQs.limit
-      }
-
-      ExerciseTracker.findOne(
+      ExerciseTracker.aggregate(
         query,
-        {},
       (err,logs)=>{
         if(err){
           res.send('error')
         }
         else{
         if(logs){
-        //console.log(logs)
+        //console.log(logs[0])
         res.json({
-          _id:logs._id,
-          username:logs.username,
-          log:logs.log,
-          count:logs.log.length
-        });}
+          _id:logs[0]._id,
+          log:logs[0].log.slice(0,limit),
+          count:logs[0].cnt
+        })}
         
         else{
           res.json({
-            _id:parsedQs.userId,
+            _id:req.query.userId,
             log:[],
           count:0
           })
@@ -221,8 +238,7 @@ app.get('/api/exercise/log',(req,res)=>{
         }
       })
     }
-  
-})
+  )
 
 
 
