@@ -169,7 +169,7 @@ app.get('/api/exercise/users',(req,res)=>{
 });
 
 app.get('/api/exercise/log',(req,res)=>{
-  let data=req.query.userId.split('?')
+  
   var limit=100;
  // console.log(req.query);
  
