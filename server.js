@@ -5,13 +5,12 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const url = require('url');
 const querystring = require('url');
-
+require('dotenv').config();
 
 
 //mongo connection
 mongoose.Promise = global.Promise;
-const mongoURI="<add your mongo URI here>";
-mongoose.connect(mongoURI, 
+mongoose.connect(process.env.MONGO_URI, 
 { useNewUrlParser: true, useUnifiedTopology: true });
 mongoose.set('useFindAndModify', false);
 
